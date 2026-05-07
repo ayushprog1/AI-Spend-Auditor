@@ -12,66 +12,123 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize Clients
+// Initialize Clients (Ensure your .env has these variables)
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Fallbacks added just in case env vars are missing during local testing
+const supabase = process.env.SUPABASE_URL ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY) : null;
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-// --- Basic Abuse Protection (Requirement 5) ---
-// Limits lead capture to 5 submissions per IP every 15 minutes
+// Abuse Protection
 const leadRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 5, 
   message: { error: "Too many audit requests from this IP, please try again later." }
 });
 
-// ... (Keep Route 1: /api/generate-summary as it is) ...
-
-// --- ROUTE 2: Capture Lead & Trigger Email ---
-app.post('/api/capture-lead', leadRateLimiter, async (req, res) => {
-  const { email, auditResult, teamSize } = req.body;
+// ROUTE 1: Generate AI Summary
+app.post('/api/generate-summary', async (req, res) => {
+  const { auditResult, teamSize, primaryUseCase } = req.body;
+  const fallbackSummary = `Based on your audit, your team of ${teamSize} primarily focused on ${primaryUseCase} could save $${auditResult.monthlySavings} monthly. We recommend reviewing your seat allocations and considering specialized tools that better fit your use case to optimize your overall AI infrastructure spend.`;
 
   try {
-    // 1. Save to Supabase
-    const { data, error: dbError } = await supabase
-      .from('leads')
-      .insert([
-        { 
+    const prompt = `
+      You are a financial auditor specializing in AI SaaS infrastructure.
+      Analyze this audit for a team of ${teamSize} whose primary use case is ${primaryUseCase}.
+      
+      Total Monthly Savings identified: $${auditResult.monthlySavings}
+      Total Annual Savings: $${auditResult.annualSavings}
+      Is this considered "High Savings" (> $500/mo): ${auditResult.isHighSavings}
+      
+      Write a concise, professional 100-word personalized summary of these findings. 
+      Do not hallucinate numbers. Be direct. If savings are $0, congratulate them on an optimized stack.
+      If it is "High Savings", gently hint that consolidating billing through an infrastructure partner could help them capture these savings easily.
+    `;
+
+    const msg = await anthropic.messages.create({
+      model: "claude-3-haiku-20240307",
+      max_tokens: 150,
+      temperature: 0.7,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    res.json({ summary: msg.content[0].text });
+  } catch (error) {
+    console.error("LLM API Error:", error);
+    res.json({ summary: fallbackSummary });
+  }
+});
+
+// ROUTE 2: Capture Lead & Trigger Email
+app.post('/api/capture-lead', leadRateLimiter, async (req, res) => {
+  const { email, auditResult, teamSize, aiSummary } = req.body;
+
+  try {
+    let savedId = "mock-id-123";
+
+    // Save to Supabase if configured
+    if (supabase) {
+      const { data, error: dbError } = await supabase
+        .from('leads')
+        .insert([{ 
           email: email, 
           team_size: teamSize, 
           monthly_savings: auditResult.monthlySavings,
-          is_high_savings: auditResult.isHighSavings 
-        }
-      ]);
+          is_high_savings: auditResult.isHighSavings,
+          ai_summary: aiSummary // Save the summary for the public page!
+        }])
+        .select('id')
+        .single();
 
-    if (dbError) throw new Error(dbError.message);
+      if (dbError) throw new Error(dbError.message);
+      savedId = data.id;
+    }
 
-    // 2. Determine Email Content based on Savings
-    const emailSubject = auditResult.isHighSavings 
-      ? `Your AI Spend Audit: Save $${auditResult.monthlySavings}/mo`
-      : `Your AI Spend Audit Results`;
+    // Send Email if configured
+    if (resend) {
+      const emailSubject = auditResult.isHighSavings 
+        ? `Your AI Spend Audit: Save $${auditResult.monthlySavings}/mo`
+        : `Your AI Spend Audit Results`;
 
-    const emailBody = auditResult.isHighSavings
-      ? `<p>Thanks for using the AI Spend Audit tool.</p>
-         <p>We found <strong>$${auditResult.monthlySavings}</strong> in monthly savings for your team.</p>
-         <p>Because your potential savings are significant, someone from the Credex team will reach out shortly to show you how we can consolidate your billing and capture these savings immediately.</p>`
-      : `<p>Thanks for using the AI Spend Audit tool.</p>
-         <p>Your stack is highly optimized. We've added you to our notification list, and we'll alert you when new AI pricing drops that affect your specific tools.</p>`;
+      const emailBody = auditResult.isHighSavings
+        ? `<p>Thanks for using the AI Spend Audit tool.</p><p>We found <strong>$${auditResult.monthlySavings}</strong> in monthly savings for your team.</p><p>Because your potential savings are significant, someone from the Credex team will reach out shortly to show you how we can consolidate your billing and capture these savings immediately.</p>`
+        : `<p>Thanks for using the AI Spend Audit tool.</p><p>Your stack is highly optimized. We've added you to our notification list, and we'll alert you when new AI pricing drops that affect your specific tools.</p>`;
 
-    // 3. Send Transactional Email
-    const { error: emailError } = await resend.emails.send({
-      from: 'Audit Tool <audit@yourdomain.com>', // Update this when you set up Resend
-      to: [email],
-      subject: emailSubject,
-      html: emailBody,
-    });
+      const { error: emailError } = await resend.emails.send({
+        from: 'Audit Tool <audit@yourdomain.com>', 
+        to: [email],
+        subject: emailSubject,
+        html: emailBody,
+      });
+      if (emailError) throw new Error(emailError.message);
+    }
 
-    if (emailError) throw new Error(emailError.message);
-
-    res.json({ success: true, message: "Lead captured and email sent." });
+    // Return the unique ID so the frontend can generate the URL
+    res.json({ success: true, shareId: savedId });
   } catch (error) {
     console.error("Lead Capture Error:", error);
     res.status(500).json({ error: "Failed to process lead." });
+  }
+});
+
+// ROUTE 3: Fetch Public Audit (For the Shareable URL)
+app.get('/api/audit/:id', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.json({ monthly_savings: 450, ai_summary: "Mock summary because Supabase is not connected yet." });
+    }
+
+    // Notice we DO NOT select the email column to protect user privacy
+    const { data, error } = await supabase
+      .from('leads')
+      .select('monthly_savings, ai_summary')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error) throw new Error(error.message);
+    res.json(data);
+  } catch (error) {
+    console.error("Fetch Audit Error:", error);
+    res.status(404).json({ error: "Audit not found." });
   }
 });
 
