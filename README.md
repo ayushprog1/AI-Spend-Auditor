@@ -3,10 +3,9 @@
 A free, lead-generating web application designed to help startups audit their AI infrastructure stack. By analyzing current tool usage against live pricing data, it identifies seat mismatches, redundant tools, and retail markups to instantly surface actionable savings.
 
 ## Visuals
-*([Insert Screenshot of Form here])*
-*([Insert Screenshot of Results Hero here])*
-*([Insert Screenshot of Shared Public URL here])*
-*(Or insert a Loom video link here)*
+![Audit Form Interface](./assets/Screenshot(155).png)
+![Savings Analysis Dashboard](./assets/Screenshot(157).png)
+![Public Sharing View](./assets/Screenshot(159).png)
 
 ## Quick Start
 **Prerequisites:** Node.js (v18+)
@@ -15,7 +14,7 @@ A free, lead-generating web application designed to help startups audit their AI
 2. Install backend dependencies: `cd server && npm install`
 3. Install frontend dependencies: `cd client && npm install`
 4. Create a `.env` in the `server` folder with:
-   `ANTHROPIC_API_KEY=your_key`
+   `GEMINI_API_KEY=your_key`
    `SUPABASE_URL=your_url`
    `SUPABASE_ANON_KEY=your_key`
    `RESEND_API_KEY=your_key`
@@ -30,4 +29,24 @@ A free, lead-generating web application designed to help startups audit their AI
 5. **No Login Required:** Gated the report breakdown behind an email capture rather than forcing a full account creation. *Why:* Maximizes top-of-funnel conversion for Credex's lead generation goals.
 
 ## Deployed Application
-**Live URL:** [Insert Vercel/Render URL here]
+**Live URL:** [https://ai-spend-auditor-one.vercel.app/]
+
+# Credex AI Spend Auditor
+
+**Live Frontend:** [https://ai-spend-auditor-one.vercel.app/]
+**Live Backend:** [https://ai-spend-auditor.onrender.com]
+
+## Overview
+A full-stack B2B SaaS application designed to audit a company's AI tool stack, identify retail API overspending, and generate personalized savings reports using LLMs.
+
+## Tech Stack
+* **Frontend:** React, Vite, Tailwind CSS, React Router, React Helmet
+* **Backend:** Node.js, Express, CORS
+* **Database:** Supabase (PostgreSQL)
+* **Email:** Resend
+* **AI:** Google Gemini 1.5 Flash (via Generative AI SDK)
+
+## How to Run Locally
+1. Clone the repository.
+2. `cd server` -> `npm install` -> Create `.env` -> `node index.js`
+3. `cd client` -> `npm install` -> `npm run dev`
