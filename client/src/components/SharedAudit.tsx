@@ -23,7 +23,7 @@ export default function SharedAudit() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/api/audit/${id}`)
+    fetch(`https://ai-spend-auditor.onrender.com/api/audit/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error('Not found');
         return res.json();

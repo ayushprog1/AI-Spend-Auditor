@@ -30,7 +30,7 @@ function Home() {
     setTeamSize(data.teamSize);
 
     try {
-      const response = await fetch('http://localhost:3001/api/generate-summary', {
+      const response = await fetch('https://ai-spend-auditor.onrender.com/api/generate-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -49,7 +49,7 @@ function Home() {
 
   const handleCaptureLead = async (email: string) => {
     try {
-      const response = await fetch('http://localhost:3001/api/capture-lead', {
+      const response = await fetch('https://ai-spend-auditor.onrender.com/api/capture-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, auditResult, teamSize, aiSummary }),

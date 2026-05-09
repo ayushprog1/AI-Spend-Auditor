@@ -61,7 +61,6 @@ export default function ResultsPage({ result, aiSummary, onSubmitEmail }: Result
         <h3 className={`text-2xl font-extrabold ${theme.colors.secondary} px-2`}>Line-Item Breakdown</h3>
         {result.toolAudits.map((audit, i) => (
           <div key={i} className={`${theme.colors.card} flex flex-col md:flex-row items-center justify-between gap-8 p-6 md:px-10`}>
-            {/* Tool Name */}
             <div className="flex items-center gap-4 w-full md:w-1/4">
               <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 flex items-center justify-center">
                 <span className="text-xl font-bold text-gray-300">#</span>
