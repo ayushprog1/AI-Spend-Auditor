@@ -1,0 +1,38 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Client Dependencies
+      working-directory: ./client
+      run: npm install
+
+    - name: Run Client Linting
+      working-directory: ./client
+      run: npm run lint
+      # Note: Ensure you have a 'lint' script in your client package.json (e.g., "lint": "eslint src --ext ts,tsx")
+
+    - name: Run Audit Engine Tests
+      working-directory: ./client
+      run: npm run test -- --run
+      # The --run flag tells Vitest to run once and exit instead of entering watch mode
+
+    - name: Install Server Dependencies
+      working-directory: ./server
+      run: npm install

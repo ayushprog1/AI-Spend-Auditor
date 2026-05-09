@@ -1,5 +1,3 @@
-// client/src/data/pricingData.ts
-
 export type UseCase = 'coding' | 'writing' | 'data' | 'research' | 'mixed';
 
 export interface Plan {
@@ -37,5 +35,4 @@ export const toolsData: Record<string, Tool> = {
       { id: 'enterprise', name: 'Enterprise', pricePerSeat: 60 }, 
     ],
   },
-  // You will add the rest of the tools here...
 };

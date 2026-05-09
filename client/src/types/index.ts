@@ -1,4 +1,4 @@
-import { UseCase } from '../data/pricingData';
+import type { UseCase } from '../data/pricingData';
 
 export interface UserInput {
   teamSize: number;
