@@ -3,9 +3,9 @@
 A free, lead-generating web application designed to help startups audit their AI infrastructure stack. By analyzing current tool usage against live pricing data, it identifies seat mismatches, redundant tools, and retail markups to instantly surface actionable savings.
 
 ## Visuals
-![Audit Form Interface](./assets/Screenshot(155).png)
-![Savings Analysis Dashboard](./assets/Screenshot(157).png)
-![Public Sharing View](./assets/Screenshot(159).png)
+![Audit Form Interface](./assets/Screenshot%20(155).png)
+![Savings Analysis Dashboard](./assets/Screenshot%20(157).png)
+![Public Sharing View](./assets/Screenshot%20(159).png)
 
 ## Quick Start
 **Prerequisites:** Node.js (v18+)
